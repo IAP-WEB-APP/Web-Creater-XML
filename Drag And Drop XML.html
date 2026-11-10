@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>XML NOOB EDITOR</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #080d18;
+  color: #e5efff;
+  font-family: Arial, sans-serif;
+}
+
+header {
+  padding: 16px;
+  background: #101b2d;
+  border-bottom: 1px solid #174477;
+}
+
+header h2 {
+  color: #168cff;
+  margin: 0;
+}
+
+header small {
+  color: #829ab8;
+}
+
+main {
+  padding: 12px;
+  max-width: 1100px;
+  margin: auto;
+}
+
+.panel {
+  background: #101a2a;
+  border: 1px solid #203650;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 13px;
+}
+
+h3 {
+  font-size: 14px;
+  color: #42a5ff;
+}
+
+.palette {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.block {
+  background: #142b48;
+  border: 1px solid #2463a0;
+  padding: 11px;
+  border-radius: 7px;
+  color: #cce5ff;
+  font-size: 12px;
+  margin-bottom: 8px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.block strong {
+  display: block;
+  color: #42a5ff;
+  margin-bottom: 7px;
+}
+
+.block input,
+.block select {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  background: #080f1c;
+  color: white;
+  border: 1px solid #294866;
+  border-radius: 5px;
+  font-size: 13px;
+  touch-action: auto;
+}
+
+.block label {
+  display: block;
+  margin-top: 7px;
+}
+
+.workspace {
+  min-height: 210px;
+  padding: 12px;
+  background: #080f1c;
+  border: 1px dashed #347fbd;
+  border-radius: 8px;
+  transition: background .2s;
+}
+
+.workspace.highlight,
+.children.highlight {
+  background: #102d4d;
+  border: 2px dashed #42a5ff;
+}
+
+.children {
+  min-height: 45px;
+  margin-top: 8px;
+  margin-left: 10px;
+  padding: 8px;
+  border-left: 2px solid #168cff;
+  background: #091525;
+  border-radius: 5px;
+}
+
+.drop-hint {
+  color: #607c9d;
+  text-align: center;
+  font-size: 12px;
+  padding: 25px 5px;
+}
+
+.delete {
+  float: right;
+  background: #9b2736;
+  padding: 6px 9px;
+  border: 0;
+  color: white;
+  border-radius: 5px;
+}
+
+button {
+  background: #087ce0;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  padding: 10px 13px;
+  cursor: pointer;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+pre {
+  background: #050a12;
+  color: #72c5ff;
+  border: 1px solid #203650;
+  border-radius: 8px;
+  padding: 13px;
+  overflow: auto;
+  white-space: pre;
+  font-size: 12px;
+  min-height: 140px;
+}
+
+.preview {
+  min-height: 180px;
+  padding: 12px;
+  background: white;
+  color: #222;
+  border-radius: 8px;
+  overflow: auto;
+}
+
+.preview button {
+  margin: 4px;
+}
+
+footer {
+  text-align: center;
+  color: #607c9d;
+  padding: 20px;
+  font-size: 12px;
+}
+
+/* TOUCH GHOST */
+.touch-ghost {
+  position: fixed;
+  z-index: 99999;
+  width: 145px;
+  opacity: .9;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 20px #008cff88;
+}
+
+.block.dragging {
+  opacity: .25;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h2>SIMPLE XML GENERATOR</h2>
+  <small>Touch Drag & Drop System</small>
+</header>
+
+<main>
+
+<section class="panel">
+  <h3>BLOCK LIBRARY</h3>
+    
+  <div class="palette">
+
+    <div class="block" data-type="LinearLayout">
+      <strong>LinearLayout</strong>
+      Linear
+    </div>
+
+    <div class="block" data-type="TextView">
+      <strong>TextView</strong>
+      Text
+    </div>
+
+    <div class="block" data-type="Button">
+      <strong>Button</strong>
+      Button
+    </div>
+
+    <div class="block" data-type="ImageView">
+      <strong>ImageView</strong>
+      Image
+    </div>
+
+    <div class="block" data-type="Space">
+      <strong>Space</strong>
+      Empty Block
+    </div>
+
+  </div>
+</section>
+
+<section class="panel">
+  <h3>BLOCK WORKSPACE</h3>
+
+  <div class="toolbar">
+    <button onclick="clearWorkspace()">CLEAR</button>
+    <button onclick="update()">GENERATE XML</button>
+  </div>
+
+  <div class="workspace" id="workspace">
+    <div class="drop-hint" id="hint">
+      Drag And Drop to make the XML
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h3>XML CODE VIEWER</h3>
+
+  <div class="toolbar">
+    <button onclick="copyXML()">COPY XML</button>
+    <button onclick="downloadXML()">DOWNLOAD THIS XML</button>
+  </div>
+
+  <pre id="codeViewer">&lt;!-- XML will appear here --&gt;</pre>
+</section>
+
+<section class="panel">
+  <h3>XML LIVE PREVIEW</h3>
+  <div class="preview" id="preview">
+    <p>Preview will appear here.</p>
+  </div>
+</section>
+
+<footer>
+  GENERATOR XML MODERN WITH IAP
+  <p>How Going To Services Dev? click On bottom👇</p>
+  <p>
+      <a href="https://tiktok.com/@official_iap_project">Tiktok</a>
+  </p>
+  <p>
+      <a href="t.me/Ojan12s098">Telegram</a>
+  </p>
+  
+</footer>
+</main>
+<script>
+
+const workspace = document.getElementById("workspace");
+const codeViewer = document.getElementById("codeViewer");
+const preview = document.getElementById("preview");
+
+let counter = 0;
+let dragData = null;
+
+const settings = {
+
+  LinearLayout: ["width", "height", "orientation"],
+  TextView: ["width", "height", "text"],
+  Button: ["width", "height", "text"],
+  ImageView: ["width", "height"],
+  Space: ["width", "height"]
+
+};
+
+// CREATE BLOCK
+function createBlock(type) {
+
+  const block = document.createElement("div");
+
+  block.className = "block";
+  block.dataset.type = type;
+  block.dataset.id = ++counter;
+
+  const title = document.createElement("strong");
+  title.textContent = type;
+
+  const remove = document.createElement("button");
+  remove.className = "delete";
+  remove.textContent = "DELETE";
+
+  remove.onclick = function(e) {
+    e.stopPropagation();
+    block.remove();
+    update();
+  };
+
+  block.appendChild(remove);
+  block.appendChild(title);
+
+  settings[type].forEach(attr => {
+
+    const label = document.createElement("label");
+    label.textContent = attr;
+
+    let input;
+
+    if (attr === "orientation") {
+
+      input = document.createElement("select");
+
+      ["vertical", "horizontal"].forEach(value => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        input.appendChild(option);
+      });
+
+    } else {
+
+      input = document.createElement("input");
+      input.type = "text";
+
+      if (attr === "width" || attr === "height") {
+        input.value = "wrap_content";
+      }
+
+      if (attr === "text") {
+        input.value = type === "Button"
+          ? "Click Me"
+          : "Hello World!";
+      }
+    }
+
+    input.dataset.attr = attr;
+
+    input.addEventListener("input", update);
+    input.addEventListener("change", update);
+
+    label.appendChild(input);
+    block.appendChild(label);
+
+  });
+
+  if (type === "LinearLayout") {
+
+    const children = document.createElement("div");
+
+    children.className = "children";
+    children.dataset.container = "true";
+    children.textContent = "Drop child blocks here";
+
+    block.appendChild(children);
+  }
+
+  return block;
+}
+
+// TOUCH DRAG START
+document.addEventListener("pointerdown", function(e) {
+
+  const block = e.target.closest(".block");
+
+  if (!block) return;
+
+  if (
+    e.target.tagName === "INPUT" ||
+    e.target.tagName === "SELECT" ||
+    e.target.tagName === "BUTTON"
+  ) return;
+
+  const isPalette = block.parentElement.classList.contains("palette");
+
+  if (!isPalette && !workspace.contains(block)) return;
+
+  e.preventDefault();
+
+  const rect = block.getBoundingClientRect();
+
+  const ghost = block.cloneNode(true);
+
+  ghost.classList.add("touch-ghost");
+  ghost.style.width = rect.width + "px";
+
+  document.body.appendChild(ghost);
+
+  dragData = {
+    block: block,
+    isPalette: isPalette,
+    ghost: ghost,
+    pointerId: e.pointerId
+  };
+
+  if (!isPalette) {
+    block.classList.add("dragging");
+  }
+
+  moveGhost(e.clientX, e.clientY);
+
+});
+
+// MOVE
+function moveGhost(x, y) {
+
+  if (!dragData) return;
+
+  dragData.ghost.style.left = x + "px";
+  dragData.ghost.style.top = y + "px";
+
+  document.querySelectorAll(".highlight").forEach(el => {
+    el.classList.remove("highlight");
+  });
+
+  dragData.ghost.style.display = "none";
+
+  const target = document.elementFromPoint(x, y);
+
+  dragData.ghost.style.display = "";
+
+  if (!target) return;
+
+  const container = target.closest(".children");
+
+  if (container) {
+    container.classList.add("highlight");
+  } else if (workspace.contains(target) || target === workspace) {
+    workspace.classList.add("highlight");
+  }
+}
+
+document.addEventListener("pointermove", function(e) {
+
+  if (!dragData) return;
+
+  if (e.pointerId !== dragData.pointerId) return;
+
+  e.preventDefault();
+
+  moveGhost(e.clientX, e.clientY);
+
+}, {passive: false});
+
+// DROP
+document.addEventListener("pointerup", function(e) {
+
+  if (!dragData) return;
+
+  const data = dragData;
+
+  data.ghost.style.display = "none";
+
+  const target = document.elementFromPoint(
+    e.clientX,
+    e.clientY
+  );
+
+  let destination = null;
+
+  if (target) {
+    const container = target.closest(".children");
+
+    if (container) {
+      destination = container;
+    } else if (workspace === target ||
+               workspace.contains(target)) {
+      destination = workspace;
+    }
+  }
+
+  if (destination) {
+
+    if (data.isPalette) {
+
+      const newBlock = createBlock(
+        data.block.dataset.type
+      );
+
+      destination.appendChild(newBlock);
+
+    } else {
+
+      const movingBlock = data.block;
+
+      if (
+        movingBlock !== destination &&
+        !movingBlock.contains(destination)
+      ) {
+        destination.appendChild(movingBlock);
+      }
+    }
+  }
+
+  data.block.classList.remove("dragging");
+  data.ghost.remove();
+
+  dragData = null;
+
+  document.querySelectorAll(".highlight").forEach(el => {
+    el.classList.remove("highlight");
+  });
+
+  update();
+
+});
+
+// CANCEL DRAG
+document.addEventListener("pointercancel", function() {
+
+  if (!dragData) return;
+
+  dragData.block.classList.remove("dragging");
+  dragData.ghost.remove();
+
+  dragData = null;
+
+  document.querySelectorAll(".highlight").forEach(el => {
+    el.classList.remove("highlight");
+  });
+
+});
+
+// GET ATTRIBUTES
+function getAttributes(block) {
+
+  const attrs = {};
+
+  block.querySelectorAll(":scope > label > input, :scope > label > select")
+    .forEach(input => {
+      attrs[input.dataset.attr] = input.value;
+    });
+
+  return attrs;
+}
+
+// ESCAPE XML
+function escapeXML(value) {
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+
+}
+
+// GENERATE BLOCK XML
+function generateBlock(block, depth) {
+
+  const type = block.dataset.type;
+  const attrs = getAttributes(block);
+  const indent = "    ".repeat(depth);
+
+  let xml = indent + "<" + type;
+
+  for (let key in attrs) {
+
+    xml += ' android:' + key +
+      '="' + escapeXML(attrs[key]) + '"';
+
+  }
+
+  if (type === "LinearLayout") {
+
+    xml += ">\n";
+
+    const children = block.querySelector(":scope > .children");
+
+    if (children) {
+
+      Array.from(children.children)
+        .filter(child => child.classList.contains("block"))
+        .forEach(child => {
+          xml += generateBlock(child, depth + 1);
+        });
+
+    }
+
+    xml += indent + "</LinearLayout>\n";
+
+  } else {
+
+    xml += " />\n";
+
+  }
+
+  return xml;
+}
+
+// GENERATE XML
+function generate() {
+
+  const blocks = Array.from(workspace.children)
+    .filter(child => child.classList.contains("block"));
+
+  let xml =
+    '<?xml version="1.0" encoding="utf-8"?>\n' +
+    '<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"\n' +
+    '    android:layout_width="match_parent"\n' +
+    '    android:layout_height="match_parent"\n' +
+    '    android:orientation="vertical">\n';
+
+  blocks.forEach(block => {
+    xml += generateBlock(block, 1);
+  });
+
+  xml += "</LinearLayout>";
+
+  codeViewer.textContent = xml;
+
+  return xml;
+}
+
+// PREVIEW
+function renderBlock(block) {
+
+  const type = block.dataset.type;
+  const attrs = getAttributes(block);
+
+  let element;
+
+  if (type === "LinearLayout") {
+
+    element = document.createElement("div");
+
+    element.style.display = "flex";
+    element.style.flexDirection =
+      attrs.orientation === "horizontal"
+        ? "row"
+        : "column";
+
+    element.style.gap = "6px";
+    element.style.padding = "8px";
+    element.style.border = "1px dashed #9bbbd8";
+
+    const children = block.querySelector(":scope > .children");
+
+    if (children) {
+
+      Array.from(children.children)
+        .filter(child => child.classList.contains("block"))
+        .forEach(child => {
+          element.appendChild(renderBlock(child));
+        });
+
+    }
+
+  } else if (type === "TextView") {
+
+    element = document.createElement("div");
+    element.textContent = attrs.text || "TextView";
+
+  } else if (type === "Button") {
+
+    element = document.createElement("button");
+    element.textContent = attrs.text || "Button";
+
+  } else if (type === "ImageView") {
+
+    element = document.createElement("div");
+    element.textContent = "IMAGE";
+    element.style.padding = "20px";
+    element.style.background = "#dce8f5";
+
+  } else {
+
+    element = document.createElement("div");
+    element.style.height = "15px";
+
+  }
+
+  return element;
+}
+
+// UPDATE
+function update() {
+
+  const blocks = Array.from(workspace.children)
+    .filter(child => child.classList.contains("block"));
+
+  const hint = document.getElementById("hint");
+
+  if (hint) {
+    hint.style.display =
+      blocks.length ? "none" : "block";
+  }
+
+  generate();
+
+  preview.innerHTML = "";
+
+  blocks.forEach(block => {
+    preview.appendChild(renderBlock(block));
+  });
+
+}
+
+// CLEAR
+function clearWorkspace() {
+
+  if (confirm("Hapus semua blocks?")) {
+
+    Array.from(workspace.children)
+      .filter(el => el.classList.contains("block"))
+      .forEach(el => el.remove());
+
+    update();
+
+  }
+
+}
+
+// COPY
+function copyXML() {
+
+  navigator.clipboard.writeText(generate())
+    .then(() => alert("XML berhasil disalin!"))
+    .catch(() => alert("Clipboard tidak tersedia."));
+
+}
+
+// DOWNLOAD
+function downloadXML() {
+
+  const blob = new Blob(
+    [generate()],
+    {type: "application/xml"}
+  );
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = "Downloaded_XML.xml";
+  a.click();
+
+  URL.revokeObjectURL(url);
+
+}
+
+update();
+
+</script>
+
+</body>
+</html>
